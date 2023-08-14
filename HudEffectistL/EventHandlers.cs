@@ -9,14 +9,14 @@ public class EventHandlers
     private readonly Plugin _plugin;
     public EventHandlers(Plugin plugin) => _plugin = plugin;
     private List<CoroutineHandle> _coroutinetokill = new List<CoroutineHandle>();
-    private Dictionary<Player, CoroutineHandle> _playercoroutine = new Dictionary<Player, CoroutineHandle>();
+    private readonly Dictionary<Player, CoroutineHandle> _playercoroutine = new Dictionary<Player, CoroutineHandle>();
     
     public void OnStartRound()
     {
         _coroutinetokill.Add(MEC.Timing.RunCoroutine(KingCoroutine()));
     }
 
-    public IEnumerator<float> KingCoroutine()
+    private IEnumerator<float> KingCoroutine()
     {
         while (true)
         {
@@ -24,7 +24,7 @@ public class EventHandlers
 
             foreach (Player pl in Player.List)
             {
-                if(!pl.IsConnected || !pl.IsAlive) continue;
+                if(!pl.IsConnected || !pl.IsAlive || pl.IsScp) continue;
                 
                 if(_playercoroutine.TryGetValue(pl, out CoroutineHandle coroutine)) continue;
                 
@@ -33,22 +33,27 @@ public class EventHandlers
         }
     }
 
-    public IEnumerator<float> ShowingEffect(Player player)
+    private IEnumerator<float> ShowingEffect(Player player)
     {
         while (true)
         {
-            if(!player.IsConnected || !player.IsAlive) yield break;
+            if (!player.IsConnected || !player.IsAlive || player.IsScp)
+            {
+                yield break;
+            }
 
-            string message = "\n \n \n \n \n";
+            var message = "\n \n \n \n \n";
 
             foreach (var status in player.ActiveEffects)
             {
-                message += $"Name:{status.name}; Intensity:{status._intensity}; Time left:{status._timeLeft}                     \n";
+                message += $"Type:{status.name}; Intensity:{status._intensity}; Time left:{status._timeLeft}                     \n";
             }
 
-            player.ShowHint(message, 1.05f);
+            var finalmessage = $"<color={player.Role.Color.ToString()}>" + message + "</color>" + "<size=" + _plugin.Config.textSize.ToString() + "%>";
+
+            player.ShowHint(finalmessage, _plugin.Config.Intensity + 0.05f);
             
-            yield return Timing.WaitForSeconds(1f);
+            yield return Timing.WaitForSeconds(_plugin.Config.Intensity);
         }
     }
 }
